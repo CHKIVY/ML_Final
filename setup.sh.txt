@@ -1,0 +1,4 @@
+# setup.sh
+
+# Install libgl1-mesa-glx package
+apt-get install -y libgl1-mesa-glx
