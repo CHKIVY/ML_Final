@@ -30,32 +30,48 @@ def run_model(processed_img):
     return preds
 
 
-lock = threading.Lock()
+#lock = threading.Lock()
 cascPath = "haarcascade_frontalface_default.xml"
 faceCascade = cv2.CascadeClassifier(cascPath)
+font = cv2.FONT_HERSHEY_SIMPLEX
+
 ###
 thickness=10
-facesContainer = {'faces':[[0,0,0,0]]}
+#facesContainer = {'faces':[[0,0,0,0]]}
+
 
 def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-    if math.floor(time.time()) % 5 == 0:
-        with lock:
-            facesContainer['faces'] = face_cascade.detectMultiScale(img, minNeighbors=2)
-        for (x,y,w,h) in facesContainer['faces']:
+    #img = frame.to_ndarray(format="bgr24")
+
+    faces = faceCascade.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), minNeighbors=2, 
+                                        scaleFactor = 1.15,
+                                        minSize = (30,30) )
+    for (x,y,w,h) in faces:
             #x,y,w,h = expandBox((x,y,w,h),img.shape[1],img.shape[0])
             
-#             
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            image = frame[y:y+h, x:x+w]
-            processed_img = preprocessing(image)
-            preds = run_model(processed_img)
-            cv2.putText(frame, f'BMI: {preds}', (x+5, y-5), font, 1, (255, 255, 255), 2)
-            #img = drawBoxNp(img,x,y,w,h,thickness)
-    return av.VideoFrame.from_ndarray(frame, format="bgr24")
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        image = frame[y:y+h, x:x+w]
+        processed_img = preprocessing(image)
+        preds = run_model(processed_img)
+        st.write(preds)
+        cv2.putText(frame, f'BMI: {preds}', (x+5, y-5), font, 1, (255, 255, 255), 2)
+        #img = drawBoxNp(img,x,y,w,h,thickness)
+    return preds, frame
+    
+class video_process:
+    def __init__(self):
+        self.frame_lock = threading.Lock()
+        self.out_image = None
+        self.pred_bmi = []
 
+    def recv(self, frame):
+        frm = frame.to_ndarray(format='bgr24')
+        pred_bmi, frame_bmi = video_frame_callback(frm)
+        with self.frame_lock:
+            self.out_image = frame_bmi
+            self.pred_bmi = pred_bmi
 
-    ###
+        return av.VideoFrame.from_ndarray(frame_bmi, format="bgr24")
 
     #Set video source to default webcam
 #     video_capture = cv2.VideoCapture(0)
@@ -187,8 +203,8 @@ elif selected_page == 'Model Demo':
         #     predict_bmi()
         #if st.button("Predict BMI"):
         
-        ctx = webrtc_streamer(key="example", video_frame_callback=video_frame_callback,
-                sendback_audio=False,rtc_configuration={"iceServers": get_ice_servers()})
+        ctx = webrtc_streamer(key="example", video_transformer_factory=video_process,
+                sendback_audio=False, rtc_configuration={"iceServers": get_ice_servers()})
 
     with upload_tab:
         file = st.file_uploader("Upload Art", key="file_uploader")
