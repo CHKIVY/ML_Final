@@ -14,7 +14,7 @@ import time,math,threading
 from turn import get_ice_servers
 
 model = joblib.load('model_svr_resnet.h5')
-
+@st.cache_resource(show_spinner=False)
 def preprocessing(image_name):
     img = cv2.resize(image_name, (224, 224))
     img = image.img_to_array(img)
@@ -155,12 +155,12 @@ if selected_page == 'Business Applications':
         'Icon 2': {
             'image_path': 'img2.png',
             'title': 'Fitness App',
-            'text': ' quickly assess BMI without physical instrument'
+            'text': 'Quickly assess BMI without physical instrument'
         },
         'Icon 3': {
             'image_path': 'img3.png',
             'title': 'Virtual Try-ons',
-            'text': 'upload shopper images and virtually try on different outfits'
+            'text': 'Upload shopper images and virtually try on different outfits'
         }
     }
 
