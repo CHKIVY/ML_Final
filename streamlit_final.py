@@ -47,11 +47,12 @@ def video_frame_callback(frame):
             
 #             
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            processed_img = preprocessing(frame[y:y+h, x:x+w])
+            image = frame[y:y+h, x:x+w]
+            processed_img = preprocessing(image)
             preds = run_model(processed_img)
             cv2.putText(frame, f'BMI: {preds}', (x+5, y-5), font, 1, (255, 255, 255), 2)
             #img = drawBoxNp(img,x,y,w,h,thickness)
-    return av.VideoFrame.from_ndarray(img, format="bgr24")
+    return av.VideoFrame.from_ndarray(frame, format="bgr24")
 
 
     ###
@@ -185,7 +186,8 @@ elif selected_page == 'Model Demo':
         # if st.button("Predict BMI"):
         #     predict_bmi()
         #if st.button("Predict BMI"):
-        webrtc_streamer(key="example", video_frame_callback=video_frame_callback,
+        
+        ctx = webrtc_streamer(key="example", video_frame_callback=video_frame_callback,
                 sendback_audio=False,rtc_configuration={"iceServers": get_ice_servers()})
 
     with upload_tab:
